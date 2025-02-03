@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
+import 'package:flutter_joystick/flutter_joystick.dart';
+
 
 void main() {
   runApp(MyApp());
@@ -14,7 +16,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final String rosBridgeUrl = "ws://10.10.18.70:9090"; // Change to your ROS PC's IP
+  final String rosBridgeUrl = "ws://192.168.1.5:9090"; // Change to your ROS PC's IP
   late WebSocketChannel channel;
   bool isConnected = false;
   String rosMessage = "Test your codes here";
@@ -76,12 +78,15 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  void getInfo() {
+   void publishVelocity(double linear, double angular) {
     if (isConnected) {
       var msg = {
-        "op": "call_service",
-        "service": "/get_info",
-        "args": {}
+        "op": "publish",
+        "topic": "/turtle1/cmd_vel",
+        "msg": {
+          "linear": {"x": linear, "y": 0.0, "z": 0.0},
+          "angular": {"x": 0.0, "y": 0.0, "z": angular}
+        }
       };
       channel.sink.add(jsonEncode(msg));
     }
@@ -113,6 +118,16 @@ class _MyAppState extends State<MyApp> {
                 onPressed: test2,
                 child: Text("Publish Test 2"),
               ),
+              SizedBox(height: 20),
+              Joystick(
+                mode: JoystickMode.all,
+                listener: (details) {
+                  double linear = details.y;
+                  double angular = details.x;
+                  publishVelocity(linear, angular);
+                },
+              ),
+
             ],
           ),
         ),
